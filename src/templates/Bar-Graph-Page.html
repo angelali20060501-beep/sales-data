@@ -20,18 +20,21 @@
         padding: 10px 20px 5px 20px;
         display: inline-block;
     }
+    
+    /* Fixed: Lowered to 165px to align with buttons, moved to 320px */
     .or{
-        font-family: 'Castor', serif;
+        font-family: 'Castoro', serif; 
         color: white;
-        position: absolute; top: 120px; left: 460px;
-        font-size: 30px;
+        position: absolute; top: 165px; left: 320px; 
+        font-size: 25px;
     }
 
+    /* Fixed: Lowered to 165px, moved to 600px */
     .or1{
-        font-family: 'Castor', serif;
+        font-family: 'Castoro', serif;
         color: white;
-        position: absolute; top: 120px; left: 720px;
-        font-size: 30px;
+        position: absolute; top: 165px; left: 600px;
+        font-size: 25px;
     }
 
     /* Display Area */
@@ -45,29 +48,33 @@
         height: 100%;
         z-index: 1;
     }
-    /* Company Dropdown Style*/
+    
+    /* Fixed: Added width limit to prevent overlapping */
     .Bar-Company-Select{
         font-family: 'Castoro', serif;
         font-size: 20px;
         background-color: #704214;
         color: white;
         position: absolute; top: 160px; left: 48px;
+        width: 250px; 
     }
-    /* Game Dropdown Style*/
+    /* Fixed: Moved to 370px to sit after 'OR', added width limit */
     .Bar-Game-Select{
         font-family: 'Castoro', serif;
         font-size: 20px;
         background-color: #704214;
         color: white;
-        position: absolute; top: 160px; left: 240px;
+        position: absolute; top: 160px; left: 370px;
+        width: 210px;
     }
-    /* Year Dropdown Style*/
+    /* Fixed: Moved to 650px to sit after 'OR1', added width limit */
     .Bar-Year-Select{
         font-family: 'Castoro', serif;
         font-size: 20px;
         background-color: darkorange;
         color: white;
-        position: absolute; top: 160px; left: 520px;
+        position: absolute; top: 160px; left: 650px;
+        width: 150px;
     }
 
     .Bar-text-edit{
