@@ -1,0 +1,3 @@
+import pandas as pd
+data = pd.read_csv("vgsales.csv")
+print(data["Publisher"].unique().tolist())

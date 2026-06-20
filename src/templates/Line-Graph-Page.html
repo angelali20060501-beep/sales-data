@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Line-Graph-Page</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Castoro+Titling&family=Castoro:ital@0;1&display=swap"
+          rel="stylesheet">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+
+    <style>
+        .Line-Graph-Page-title{
+            font-family: 'Castoro Titling', serif;
+            color: white;
+            margin: 50px 40px 60px 40px;
+            background-color: darkorange;
+            padding: 10px 20px 5px 20px;
+            display: inline-block;
+        }
+
+        /* Display Area */
+        .Line-Graphing-Page-Display{
+            background-color: white;
+            position: absolute; top: 250px; left: 450px; height: 550px; width: 800px;
+            z-index: -1;
+        }
+        #regionalLine {
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+        /* Company Dropdown Style*/
+        .Line-Company-Select{
+            font-family: 'Castoro', serif;
+            font-size: 20px;
+            background-color: #704214;
+            color: white;
+            position: absolute; top: 160px; left: 48px;
+        }
+        /* Year Dropdown Style*/
+        .Line-Year-Select{
+            font-family: 'Castoro', serif;
+            font-size: 20px;
+            background-color: darkorange;
+            color: white;
+            position: absolute; top: 160px; left: 520px;
+        }
+
+        .Line-text-edit{
+            font-family: 'Castoro', serif;
+            font-size: 20px;
+            background-color: white;
+            color: black;
+            position: absolute; top: 300px; left: 48px;
+        }
+        .Line-text-button{
+            font-family: 'Castoro', serif;
+            font-size: 20px;
+            background-color: white;
+            color: black;
+            position: absolute; top: 350px; left: 48px;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body style="background-color: darkslategray;">
+    <!-- Title -->
+    <h1 class="Line-Graph-Page-title">Continuous Data with Line Graph!</h1>
+    <!-- Display Area -->
+    <div class="Line-Graphing-Page-Display">
+        <div id="regionalLine"></div>
+    </div>
+    <!-- Company Dropdown -->
+    <select class="Line-Company-Select">
+        <option value="">Select Company</option>
+    </select>
+
+    <!-- Title Edit -->
+    <input type="text" class="Line-text-edit" placeholder="Edit Graph Title!">
+    <button class="Line-text-button" onclick="editTitle()">Update Chart</button>
+
+
+
+    <script>
+        async function populateCompanies() {
+            const response = await fetch("/LineCompanies");
+            const data = await response.json();
+            const select = $(".Line-Company-Select");
+            data.forEach(company => {
+                select.append(`<option value="${company}">${company}</option>`);
+            })
+        }
+
+        async function graphingCompanyLine() {
+            const company = $(".Line-Company-Select").val()
+            const response = await fetch(`/plotHistory?company=${encodeURIComponent(company)}`)
+            const data = await response.json();
+            const graphData = [{x: data.x, y: data.y, type: 'scatter', mode:"line", name: "History Sales"}]
+            const layout = {
+                title: {
+                    text: `${company} Historical Sales Trend`,
+                    font: { size: 24, family: "Castoro, serif"},
+                    x: 0.05,
+                    xanchor: 'left'
+                },
+                xaxis: { title: 'Years', showgrid: false },
+                yaxis: { title: 'Sales', showgrid: false },
+                showlegend: false
+            }
+
+            Plotly.newPlot("regionalLine", graphData, layout);
+        }
+
+        async function editTitle() {
+            const title = document.getElementsByClassName("Line-text-edit")[0].value;
+            Plotly.relayout("regionalLine", {
+                'title.text': title || "Default Title"
+            });
+        }
+
+        $(document).ready(function () {
+            populateCompanies();
+            $(".Line-Company-Select").on("change", graphingCompanyLine);
+        });
+    </script>
+
+</body>
+</html>

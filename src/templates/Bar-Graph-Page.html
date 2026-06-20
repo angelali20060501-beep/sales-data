@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Graphing-Page</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Castoro+Titling&family=Castoro:ital@0;1&display=swap"
+          rel="stylesheet">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <style>
+    .Bar-Graph-Page-title{
+        font-family: 'Castoro Titling', serif;
+        color: white;
+        margin: 50px 40px 60px 40px;
+        background-color: darkorange;
+        padding: 10px 20px 5px 20px;
+        display: inline-block;
+    }
+    .or{
+        font-family: 'Castor', serif;
+        color: white;
+        position: absolute; top: 120px; left: 460px;
+        font-size: 30px;
+    }
+
+    .or1{
+        font-family: 'Castor', serif;
+        color: white;
+        position: absolute; top: 120px; left: 720px;
+        font-size: 30px;
+    }
+
+    /* Display Area */
+    .Bar-Graphing-Page-Display{
+        background-color: white;
+        position: absolute; top: 250px; left: 450px; height: 550px; width: 800px;
+        z-index: -1;
+    }
+    #regionalBar {
+        width: 100%;
+        height: 100%;
+        z-index: 1;
+    }
+
+    /* Company Dropdown Style*/
+    .Bar-Company-Select{
+        font-family: 'Castoro', serif;
+        font-size: 20px;
+        background-color: #704214;
+        color: white;
+        position: absolute; top: 160px; left: 48px;
+    }
+
+    /* Game Dropdown Style*/
+    .Bar-Game-Select{
+        font-family: 'Castoro', serif;
+        font-size: 20px;
+        background-color: #704214;
+        color: white;
+        position: absolute; top: 200px; left: 48px;
+    }
+
+    /* Year Dropdown Style*/
+    .Bar-Year-Select{
+        font-family: 'Castoro', serif;
+        font-size: 20px;
+        background-color: darkorange;
+        color: white;
+        position: absolute; top: 160px; left: 520px;
+    }
+
+    /* Highest Dropdown Style*/
+    .Bar-Highest-Select{
+        font-family: 'Castoro', serif;
+        font-size: 20px;
+        background-color: darkorange;
+        color: white;
+        position: absolute; top: 160px; left: 780px;
+    }
+
+    .text-edit{
+        font-family: 'Castoro', serif;
+        font-size: 20px;
+        background-color: white;
+        color: black;
+        position: absolute; top: 300px; left: 48px;
+    }
+    .text-button{
+        font-family: 'Castoro', serif;
+        font-size: 20px;
+        background-color: white;
+        color: black;
+        position: absolute; top: 350px; left: 48px;
+        border-radius: 10px;
+    }
+    </style>
+</head>
+<body style="background-color: darkslategray;">
+    <h1 class="Bar-Graph-Page-title">Regional Data with Bar Graph!</h1>
+    <p class="or">or</p>
+    <p class="or1">or</p>
+
+    <!-- Display Area -->
+    <div class="Bar-Graphing-Page-Display">
+        <div id="regionalBar"></div>
+    </div>
+
+    <!-- Company Dropdown -->
+    <select class="Bar-Company-Select">
+        <option value="">Select Company</option>
+    </select>
+
+    <!-- Game Dropdown -->
+    <select class="Bar-Game-Select">
+        <option value="">Select Game</option>
+    </select>
+
+    <!-- Year Dropdown -->
+    <select class="Bar-Year-Select">
+        <option value="">Select Year Only</option>
+    </select>
+
+    <!-- Highest Dropdown -->
+    <select class="Bar-Highest-Select">
+        <option value="">Highest game sales per year</option>
+    </select>
+
+    <!-- Title Edit -->
+    <input type="text" class="text-edit" placeholder="Edit Graph Title!">
+    <button class="text-button" onclick="editTitle()">Update Chart</button>
+
+    <!-- Script for Games Dropdown -->
+<script>
+    async function populateCompanies() {
+        const response = await fetch('/BarCompanies');
+        const data = await response.json();
+        const select = $(".Bar-Company-Select");
+        data.forEach(company => {
+            select.append(`<option value="${company}">${company}</option>`);
+        });
+    }
+
+    async function populateGames() {
+        const publisher = $(".Bar-Company-Select").val();
+        const response = await fetch(`/BarGames?publisher=${encodeURIComponent(publisher)}`);
+        const data = await response.json();
+        const select = $(".Bar-Game-Select");
+        select.empty().append('<option value="">Select Game</option>');
+        if (data && data.length > 0) {
+            data.forEach(game => {
+                select.append(`<option value="${game}">${game}</option>`);
+            });
+        }
+    }
+
+    async function graphingGameBar() {
+        const game = $(".Bar-Game-Select").val();
+        const response = await fetch(`/plotBar?game=${encodeURIComponent(game)}`);
+        const data = await response.json();
+        const gameName = game.split(" (")[0];
+        const region = data.x;
+        const sales = [data.y_na, data.y_eu, data.y_jp, data.y_other];
+
+        const filtered_x = [];
+        const filtered_y = [];
+
+        for (let i = 0; i < region.length; i++) {
+            if (sales[i] > 0) {
+                filtered_x.push(region[i]);
+                filtered_y.push(sales[i]);
+            }
+        }
+
+        const max = Math.max(...filtered_y);
+        const colors = filtered_y.map(value => value === max ? "#4682B4" : "#696969");
+        const graphData = [{x: filtered_x, y: filtered_y, type: 'bar', name: 'Sales', marker: {color: colors,}}];
+
+        const layout = {
+            title: {
+                text: `Total Video Game Sales for ${gameName}`,
+                font: { size: 24, family: "Castoro, serif"},
+                x: 0.05,
+                xanchor: 'left'
+            },
+            xaxis: { title: 'Regions'},
+            yaxis: { title: 'Sales'},
+            showlegend: false
+        };
+
+        Plotly.newPlot("regionalBar", graphData, layout);
+    }
+
+    async function populateYears() {
+        const response = await fetch("/BarYear");
+        const data = await response.json()
+        const select = $(".Bar-Year-Select");
+        data.forEach(year => {
+            select.append(`<option value="${year}">${year}</option>`)
+        });
+    }
+
+    async function graphingYears() {
+        const year = $(".Bar-Year-Select").val();
+        const response = await fetch(`/plotYear?year=${encodeURIComponent(year)}`);
+        const data = await response.json();
+        const sales = [data.y_na, data.y_eu, data.y_jp, data.y_other];
+        console.log("Sales:", sales)
+
+        const colors = sales.map(value => value === Math.max(...sales) ? "#4682B4" : "#696969");
+
+        const graphData = [{x: data.x, y: sales, type: 'bar', name: 'Sales', marker: {color: colors,}}];
+        const layout = {
+            title: {
+                text: `Total Video Game Sales for ${year}`,
+                font: { size: 24, family: "Castoro, serif"},
+                x: 0.05,
+                xanchor: 'left'
+            },
+            xaxis: { title: {text: 'Regions', x: 0.2, xanchor: 'left'}},
+            yaxis: { title: 'Sales'},
+            showlegend: false
+        };
+
+        Plotly.newPlot("regionalBar", graphData, layout);
+    }
+
+    async function editTitle() {
+        const title = document.getElementsByClassName("text-edit")[0].value;
+        Plotly.relayout("regionalBar", {
+            'title.text': title || "Default Title"});
+    }
+
+    async function populateHighest() {
+        const response = await fetch("/BarHighest");
+        const data = await response.json()
+        const select = $(".Bar-Highest-Select");
+        data.forEach(year => {
+            select.append(`<option value="${year}">${year}</option>`)
+        });
+    }
+
+    async function graphingHighest() {
+        const year = $(".Bar-Highest-Select").val();
+        const response = await fetch(`/BarPlotHighest?year=${encodeURIComponent(year)}`);
+        const data = await response.json();
+
+        const paired = data.games.map((game, i) => ({ game, sale: data.sales[i] }));
+        paired.sort((a, b) => b.sale - a.sale);
+        const sortedGames = paired.map(item => item.game).slice(0, 7);
+        const sortedSales = paired.map(item => item.sale).slice(0, 7);
+
+        const graphData = [{
+            x: sortedSales,
+            y: sortedGames,
+            type: 'bar',
+            orientation: 'h',
+            name: 'Sales',
+        }];
+        const layout = {
+            title: {
+                text: `Video Game Sales for ${year}`,
+                font: { size: 24, family: "Castoro, serif"},
+                x: 0.05,
+                xanchor: 'left'
+            },
+            xaxis: {
+                title: {text: 'Games', x: 0.2, xanchor: 'left'},
+                tickangle: 0,
+                automargin: true
+            },
+            yaxis: { title: 'Sales' },
+            margin: {
+                l: 250,
+                r: 20,
+                t: 100,
+                b: 50
+            },
+            width: 750,
+            showlegend: false
+        };
+
+        Plotly.newPlot("regionalBar", graphData, layout);
+    }
+
+    $(document).ready(function() {
+        populateCompanies();
+        populateYears();
+        populateHighest();
+        $(".Bar-Company-Select").on("change", populateGames);
+        $(".Bar-Game-Select").on("change", graphingGameBar);
+        $(".Bar-Year-Select").on("change", graphingYears);
+        $(".Bar-Highest-Select").on("change", graphingHighest);
+    });
+
+</script>
+</body>
+</html>
