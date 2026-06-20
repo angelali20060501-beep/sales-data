@@ -84,84 +84,90 @@
 
 
 
-    <script>
-        let globalDataset = []; // This will hold your CSV data
-    
-        // 1. Load the CSV immediately when the page opens
-        $(document).ready(function () {
-            // IMPORTANT: Change this path if your CSV is named differently or in a different folder!
-            Papa.parse("src/static/vgsales.csv", {
-                download: true,
-                header: true, 
-                dynamicTyping: true,
-                complete: function(results) {
-                    globalDataset = results.data;
-                    populateCompanies();
-                }
-            });
-        });
-    
-        // 2. Extract unique companies for the dropdown
-        function populateCompanies() {
-            // Get all unique publishers, remove empty ones, and sort alphabetically
-            const companies = [...new Set(globalDataset.map(row => row.Publisher))].filter(Boolean).sort();
-            const select = $(".Line-Company-Select");
-            select.empty(); 
-            
-            companies.forEach(company => {
-                select.append(`<option value="${company}">${company}</option>`);
-            });
-    
-            // Trigger the graph for the first company in the list
-            $(".Line-Company-Select").on("change", graphingCompanyLine);
-            if(companies.length > 0) graphingCompanyLine();
-        }
-    
-        // 3. Filter data and draw the graph (Replacing your Python backend)
-        function graphingCompanyLine() {
-            const company = $(".Line-Company-Select").val();
-    
-            // Filter the dataset to only include rows for the selected company
-            const companyData = globalDataset.filter(row => row.Publisher === company && row.Year);
-    
-            // Group the data by Year and sum up the Sales
-            const salesByYear = {};
-            companyData.forEach(row => {
-                const year = row.Year;
-                const sales = row.Global_Sales || 0; 
-                
-                if (!salesByYear[year]) salesByYear[year] = 0;
-                salesByYear[year] += sales;
-            });
-    
-            // Sort the years chronologically 
-            const years = Object.keys(salesByYear).sort();
-            const salesData = years.map(year => salesByYear[year]);
-    
-            // Draw the Plotly graph
-            const graphData = [{x: years, y: salesData, type: 'scatter', mode:"line", name: "History Sales"}];
-            const layout = {
-                title: {
-                    text: `${company} Historical Sales Trend`,
-                    font: { size: 24, family: "Castoro, serif"},
-                    x: 0.05,
-                    xanchor: 'left'
-                },
-                xaxis: { title: 'Years', showgrid: false },
-                yaxis: { title: 'Sales', showgrid: false },
-                showlegend: false
+  <script>
+    let globalDataset = [];
+
+    // 1. Fetch the CSV when the page loads
+    $(document).ready(function () {
+        Papa.parse("../static/vgsales.csv", {
+            download: true,
+            header: true,
+            dynamicTyping: true,
+            skipEmptyLines: true,
+            complete: function(results) {
+                globalDataset = results.data;
+                populateCompanies();
+            },
+            error: function(error) {
+                console.error("Error loading CSV:", error);
+                alert("Could not load vgsales.csv. Please ensure it is uploaded to src/static/");
             }
-    
-            Plotly.newPlot("regionalLine", graphData, layout);
+        });
+    });
+
+    // 2. Populate the dropdown menu
+    function populateCompanies() {
+        const companies = [...new Set(globalDataset.map(row => row.Publisher))]
+            .filter(company => company && company !== "N/A") 
+            .sort();
+        
+        const select = $(".Line-Company-Select");
+        select.empty();
+        select.append(`<option value="">Select Company</option>`);
+        
+        companies.forEach(company => {
+            select.append(`<option value="${company}">${company}</option>`);
+        });
+
+        select.on("change", graphingCompanyLine);
+    }
+
+    // 3. Filter data and draw the graph
+    function graphingCompanyLine() {
+        const company = $(".Line-Company-Select").val();
+        if (!company) return; 
+
+        const companyData = globalDataset.filter(row => 
+            row.Publisher === company && 
+            row.Year && 
+            row.Year !== "N/A"
+        );
+
+        const salesByYear = {};
+        companyData.forEach(row => {
+            const year = row.Year;
+            const sales = parseFloat(row.Global_Sales) || 0;
+            
+            if (!salesByYear[year]) salesByYear[year] = 0;
+            salesByYear[year] += sales;
+        });
+
+        const years = Object.keys(salesByYear).sort();
+        const salesData = years.map(year => salesByYear[year]);
+
+        const graphData = [{x: years, y: salesData, type: 'scatter', mode:"line", name: "History Sales"}];
+        const layout = {
+            title: {
+                text: `${company} Historical Sales Trend`,
+                font: { size: 24, family: "Castoro, serif"},
+                x: 0.05,
+                xanchor: 'left'
+            },
+            xaxis: { title: 'Years', showgrid: false },
+            yaxis: { title: 'Global Sales (Millions)', showgrid: false },
+            showlegend: false
         }
-    
-        async function editTitle() {
-            const title = document.getElementsByClassName("Line-text-edit")[0].value;
-            Plotly.relayout("regionalLine", {
-                'title.text': title || "Default Title"
-            });
-        }
-    </script>
+
+        Plotly.newPlot("regionalLine", graphData, layout);
+    }
+
+    function editTitle() {
+        const title = document.getElementsByClassName("Line-text-edit")[0].value;
+        Plotly.relayout("regionalLine", {
+            'title.text': title || "Default Title"
+        });
+    }
+</script>
 
 </body>
 </html>
