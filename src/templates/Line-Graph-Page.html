@@ -67,18 +67,14 @@
     </style>
 </head>
 <body style="background-color: darkslategray;">
-    <!-- Title -->
     <h1 class="Line-Graph-Page-title">Continuous Data with Line Graph!</h1>
-    <!-- Display Area -->
     <div class="Line-Graphing-Page-Display">
         <div id="regionalLine"></div>
     </div>
-    <!-- Company Dropdown -->
     <select class="Line-Company-Select">
         <option value="">Select Company</option>
     </select>
 
-    <!-- Title Edit -->
     <input type="text" class="Line-text-edit" placeholder="Edit Graph Title!">
     <button class="Line-text-button" onclick="editTitle()">Update Chart</button>
 
@@ -100,7 +96,7 @@
             },
             error: function(error) {
                 console.error("Error loading CSV:", error);
-                alert("Could not load vgsales.csv. Please ensure it is uploaded to src/static/");
+                alert("Could not load vgsales.csv.");
             }
         });
     });
