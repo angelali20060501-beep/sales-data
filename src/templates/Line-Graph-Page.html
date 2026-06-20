@@ -9,7 +9,7 @@
           rel="stylesheet">
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 
     <style>
         .Line-Graph-Page-title{
@@ -85,20 +85,61 @@
 
 
     <script>
-        async function populateCompanies() {
-            const response = await fetch("/LineCompanies");
-            const data = await response.json();
+        let globalDataset = []; // This will hold your CSV data
+    
+        // 1. Load the CSV immediately when the page opens
+        $(document).ready(function () {
+            // IMPORTANT: Change this path if your CSV is named differently or in a different folder!
+            Papa.parse("src/static/vgsales.csv", {
+                download: true,
+                header: true, 
+                dynamicTyping: true,
+                complete: function(results) {
+                    globalDataset = results.data;
+                    populateCompanies();
+                }
+            });
+        });
+    
+        // 2. Extract unique companies for the dropdown
+        function populateCompanies() {
+            // Get all unique publishers, remove empty ones, and sort alphabetically
+            const companies = [...new Set(globalDataset.map(row => row.Publisher))].filter(Boolean).sort();
             const select = $(".Line-Company-Select");
-            data.forEach(company => {
+            select.empty(); 
+            
+            companies.forEach(company => {
                 select.append(`<option value="${company}">${company}</option>`);
-            })
+            });
+    
+            // Trigger the graph for the first company in the list
+            $(".Line-Company-Select").on("change", graphingCompanyLine);
+            if(companies.length > 0) graphingCompanyLine();
         }
-
-        async function graphingCompanyLine() {
-            const company = $(".Line-Company-Select").val()
-            const response = await fetch(`/plotHistory?company=${encodeURIComponent(company)}`)
-            const data = await response.json();
-            const graphData = [{x: data.x, y: data.y, type: 'scatter', mode:"line", name: "History Sales"}]
+    
+        // 3. Filter data and draw the graph (Replacing your Python backend)
+        function graphingCompanyLine() {
+            const company = $(".Line-Company-Select").val();
+    
+            // Filter the dataset to only include rows for the selected company
+            const companyData = globalDataset.filter(row => row.Publisher === company && row.Year);
+    
+            // Group the data by Year and sum up the Sales
+            const salesByYear = {};
+            companyData.forEach(row => {
+                const year = row.Year;
+                const sales = row.Global_Sales || 0; 
+                
+                if (!salesByYear[year]) salesByYear[year] = 0;
+                salesByYear[year] += sales;
+            });
+    
+            // Sort the years chronologically 
+            const years = Object.keys(salesByYear).sort();
+            const salesData = years.map(year => salesByYear[year]);
+    
+            // Draw the Plotly graph
+            const graphData = [{x: years, y: salesData, type: 'scatter', mode:"line", name: "History Sales"}];
             const layout = {
                 title: {
                     text: `${company} Historical Sales Trend`,
@@ -110,21 +151,16 @@
                 yaxis: { title: 'Sales', showgrid: false },
                 showlegend: false
             }
-
+    
             Plotly.newPlot("regionalLine", graphData, layout);
         }
-
+    
         async function editTitle() {
             const title = document.getElementsByClassName("Line-text-edit")[0].value;
             Plotly.relayout("regionalLine", {
                 'title.text': title || "Default Title"
             });
         }
-
-        $(document).ready(function () {
-            populateCompanies();
-            $(".Line-Company-Select").on("change", graphingCompanyLine);
-        });
     </script>
 
 </body>
